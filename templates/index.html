@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>US Stock Screener</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">
+      <span class="logo">▴</span>
+      <span class="brand-name">SCREENER<span class="brand-suffix">.US</span></span>
+    </div>
+    <nav class="top-nav">
+      <a class="active" href="/">Screener</a>
+      <a href="https://github.com/" target="_blank" rel="noopener">Source</a>
+    </nav>
+    <div class="status" id="status">
+      <span class="dot"></span>
+      <span id="status-text">Ready</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="filters">
+      <div class="filters-title">FILTERS</div>
+      <div class="filter-grid">
+        <label class="filter">
+          <span class="label">Universe size</span>
+          <input type="number" id="universe_size" value="500" min="50" max="3000" step="50" />
+          <span class="hint">50 – 3000 (Russell 3000 top-N by weight)</span>
+        </label>
+
+        <label class="filter">
+          <span class="label">Price min ($)</span>
+          <input type="number" id="price_min" value="5" min="0.5" step="0.5" />
+        </label>
+        <label class="filter">
+          <span class="label">Price max ($)</span>
+          <input type="number" id="price_max" value="100" min="0.5" step="0.5" />
+        </label>
+
+        <label class="filter">
+          <span class="label">P/E ratio &lt;</span>
+          <input type="number" id="pe_max" value="20" min="1" step="0.5" />
+        </label>
+
+        <label class="filter">
+          <span class="label">Volume ratio &gt;</span>
+          <input type="number" id="vol_ratio_min" value="2" min="1" step="0.1" />
+          <span class="hint">today ÷ 20-day avg</span>
+        </label>
+
+        <label class="filter">
+          <span class="label">RSI min</span>
+          <input type="number" id="rsi_min" value="50" min="0" max="100" step="1" />
+        </label>
+        <label class="filter">
+          <span class="label">RSI max</span>
+          <input type="number" id="rsi_max" value="100" min="0" max="100" step="1" />
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="run-btn" class="btn btn-primary">▶ Run Screen</button>
+        <label class="checkbox">
+          <input type="checkbox" id="auto-refresh" />
+          <span>Auto-refresh every 5 min</span>
+        </label>
+        <button id="export-btn" class="btn btn-secondary" disabled>↓ Export CSV</button>
+      </div>
+    </section>
+
+    <section class="stats" id="stats">
+      <div class="stat"><span class="stat-label">Universe</span><span class="stat-value" id="stat-universe">—</span></div>
+      <div class="stat"><span class="stat-label">With data</span><span class="stat-value" id="stat-with-data">—</span></div>
+      <div class="stat"><span class="stat-label">In price band</span><span class="stat-value" id="stat-band">—</span></div>
+      <div class="stat"><span class="stat-label">Passing all</span><span class="stat-value highlight" id="stat-passing">—</span></div>
+      <div class="stat"><span class="stat-label">Runtime</span><span class="stat-value" id="stat-runtime">—</span></div>
+      <div class="stat"><span class="stat-label">Last scan</span><span class="stat-value" id="stat-time">—</span></div>
+    </section>
+
+    <section class="results">
+      <div class="results-header">
+        <span class="results-title">RANKED RESULTS</span>
+        <span class="results-meta" id="results-meta"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="results-table">
+          <thead>
+            <tr>
+              <th data-sort="rank" class="sortable num">#</th>
+              <th data-sort="ticker" class="sortable">Ticker</th>
+              <th data-sort="price" class="sortable num">Price</th>
+              <th data-sort="change_pct" class="sortable num">Chg %</th>
+              <th data-sort="pe_ratio" class="sortable num">P/E</th>
+              <th data-sort="volume_ratio" class="sortable num">Vol×</th>
+              <th data-sort="rsi" class="sortable num">RSI</th>
+              <th data-sort="score" class="sortable num">Score</th>
+              <th class="num">30d</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody">
+            <tr class="empty"><td colspan="9">Press <strong>Run Screen</strong> to begin.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Data: Yahoo Finance via yfinance · Universe: iShares Russell 3000 (IWV)</span>
+      <span class="disclaimer">Not financial advice. For research/educational use only.</span>
+    </footer>
+  </main>
+
+  <div id="overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <div class="overlay-spinner"></div>
+      <div class="overlay-text" id="overlay-text">Scanning…</div>
+      <div class="overlay-sub" id="overlay-sub">This may take a few minutes</div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
