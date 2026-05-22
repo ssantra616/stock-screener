@@ -1,6 +1,4 @@
-/* ============================================================
-   Frontend logic for US Stock Screener
-   ============================================================ */
+/* US Stock Screener — frontend logic */
 
 const $ = (id) => document.getElementById(id);
 
@@ -12,10 +10,17 @@ const state = {
   autoRefreshTimer: null,
 };
 
-// --- DOM refs ---
+const FIELDS = [
+  "universe_size", "price_min", "price_max",
+  "pe_min", "pe_max",
+  "vol_ratio_min",
+  "rsi_min", "rsi_max",
+];
+
 const runBtn = $("run-btn");
 const exportBtn = $("export-btn");
 const autoRefreshCb = $("auto-refresh");
+const useYesterdayCb = $("use_yesterday");
 const overlay = $("overlay");
 const overlayText = $("overlay-text");
 const overlaySub = $("overlay-sub");
@@ -23,8 +28,9 @@ const statusEl = $("status");
 const statusText = $("status-text");
 const tbody = $("results-tbody");
 const resultsMeta = $("results-meta");
+const volLabelDay = $("vol-label-day");
+const volHint = $("vol-hint");
 
-// --- Helpers ---
 function setStatus(kind, text) {
   statusEl.classList.remove("busy", "error");
   if (kind === "busy") statusEl.classList.add("busy");
@@ -37,9 +43,7 @@ function showOverlay(text, sub) {
   overlaySub.textContent = sub || "This may take a few minutes for large universes";
   overlay.classList.remove("hidden");
 }
-function hideOverlay() {
-  overlay.classList.add("hidden");
-}
+function hideOverlay() { overlay.classList.add("hidden"); }
 
 function fmt(n, digits = 2) {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";
@@ -84,7 +88,16 @@ function barCell(value, max, kind = "score") {
     </div>`;
 }
 
-// --- Rendering ---
+function updateVolLabel() {
+  if (useYesterdayCb.checked) {
+    volLabelDay.textContent = "(yesterday)";
+    volHint.textContent = "yesterday ÷ 20-day avg";
+  } else {
+    volLabelDay.textContent = "(today)";
+    volHint.textContent = "today ÷ 20-day avg";
+  }
+}
+
 function renderResults() {
   if (!state.results.length) {
     tbody.innerHTML = `<tr class="empty"><td colspan="9">No stocks matched all criteria. Try loosening the filters.</td></tr>`;
@@ -93,7 +106,6 @@ function renderResults() {
     return;
   }
 
-  // Sort
   const dir = state.sortDir === "asc" ? 1 : -1;
   const key = state.sortBy;
   const sorted = [...state.results].sort((a, b) => {
@@ -123,7 +135,6 @@ function renderResults() {
   tbody.innerHTML = rows;
   exportBtn.disabled = false;
 
-  // Update sort indicator
   document.querySelectorAll("thead th").forEach((th) => {
     th.classList.remove("sort-asc", "sort-desc");
     if (th.dataset.sort === state.sortBy) {
@@ -143,7 +154,6 @@ function renderStats(stats, elapsed) {
   $("stat-time").textContent = new Date().toLocaleTimeString("en-US", { hour12: false });
 }
 
-// --- Scan ---
 async function runScan() {
   if (state.scanning) return;
   state.scanning = true;
@@ -151,15 +161,12 @@ async function runScan() {
   setStatus("busy", "Scanning");
   showOverlay("Scanning…", "Fetching prices, fundamentals, and computing indicators");
 
-  const body = {
-    universe_size: parseInt($("universe_size").value, 10),
-    price_min: parseFloat($("price_min").value),
-    price_max: parseFloat($("price_max").value),
-    pe_max: parseFloat($("pe_max").value),
-    vol_ratio_min: parseFloat($("vol_ratio_min").value),
-    rsi_min: parseFloat($("rsi_min").value),
-    rsi_max: parseFloat($("rsi_max").value),
-  };
+  const body = {};
+  FIELDS.forEach((f) => {
+    const el = $(f);
+    body[f] = (f === "universe_size") ? parseInt(el.value, 10) : parseFloat(el.value);
+  });
+  body.use_yesterday = useYesterdayCb.checked;
 
   try {
     const resp = await fetch("/api/scan", {
@@ -195,7 +202,6 @@ async function runScan() {
   }
 }
 
-// --- CSV export ---
 function exportCSV() {
   if (!state.results.length) return;
   const header = ["rank", "ticker", "price", "change_pct", "pe_ratio", "volume_ratio", "rsi", "score"];
@@ -218,7 +224,6 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
-// --- Sorting ---
 document.querySelectorAll("thead th.sortable").forEach((th) => {
   th.addEventListener("click", () => {
     const key = th.dataset.sort;
@@ -232,20 +237,46 @@ document.querySelectorAll("thead th.sortable").forEach((th) => {
   });
 });
 
-// --- Auto-refresh ---
 autoRefreshCb.addEventListener("change", () => {
   if (state.autoRefreshTimer) {
     clearInterval(state.autoRefreshTimer);
     state.autoRefreshTimer = null;
   }
   if (autoRefreshCb.checked) {
-    // 5 minutes
     state.autoRefreshTimer = setInterval(() => {
       if (!state.scanning) runScan();
     }, 5 * 60 * 1000);
   }
 });
 
-// --- Wire up ---
+useYesterdayCb.addEventListener("change", updateVolLabel);
+
 runBtn.addEventListener("click", runScan);
 exportBtn.addEventListener("click", exportCSV);
+
+// Auto-suggest yesterday mode if running during US market hours (9:30 AM - 4 PM ET on weekdays)
+(function autoDetectMarketHours() {
+  const now = new Date();
+  // Get current ET time using Intl
+  const etStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    weekday: "short",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).format(now);
+  // e.g. "Fri, 13:45"
+  const m = etStr.match(/^(\w+),?\s+(\d+):(\d+)/);
+  if (!m) return;
+  const day = m[1];
+  const hour = parseInt(m[2], 10);
+  const min = parseInt(m[3], 10);
+  const isWeekday = ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(day);
+  const minutesSinceMidnight = hour * 60 + min;
+  const marketOpen = 9 * 60 + 30;   // 9:30 AM ET
+  const marketClose = 16 * 60;      // 4:00 PM ET
+  if (isWeekday && minutesSinceMidnight >= marketOpen && minutesSinceMidnight < marketClose) {
+    useYesterdayCb.checked = true;
+    updateVolLabel();
+  }
+})();
