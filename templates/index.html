@@ -3,97 +3,153 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
   <title>US Stock Screener</title>
+  <meta name="description" content="Screen S&P 500 and NASDAQ-100 stocks by price, P/E, RSI and volume, ranked by a composite score." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a84ff'/%3E%3Cpath d='M7 21l6-6 4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <header class="top-bar">
-    <div class="brand">
-      <span class="logo">▴</span>
-      <span class="brand-name">SCREENER<span class="brand-suffix">.US</span></span>
-    </div>
-    <nav class="top-nav">
-      <a class="active" href="/">Screener</a>
-      <a href="https://finviz.com/screener.ashx" target="_blank" rel="noopener">Finviz ↗</a>
-    </nav>
-    <div class="status" id="status">
-      <span class="dot"></span>
-      <span id="status-text">Ready</span>
+  <!-- Header -->
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 16l5-5 3.5 3.5L20 7"/></svg>
+        </span>
+        <span class="brand__name">Screener</span>
+      </a>
+      <div class="topbar__right">
+        <div class="status" id="status" role="status" aria-live="polite">
+          <span class="dot"></span>
+          <span id="status-text">Ready</span>
+        </div>
+        <a class="topbar__link" href="https://finviz.com/screener.ashx" target="_blank" rel="noopener">Finviz ↗</a>
+      </div>
     </div>
   </header>
 
   <main class="container">
-    <section class="filters">
-      <div class="filters-title">FILTERS · NYSE + NASDAQ</div>
-      <div class="filter-grid">
-        <label class="filter">
-          <span class="label">Universe size</span>
-          <input type="number" id="universe_size" value="500" min="50" max="600" step="50" />
-          <span class="hint">50 – 600 (S&amp;P 500 + NASDAQ-100)</span>
-        </label>
+    <!-- Intro -->
+    <section class="intro">
+      <p class="eyebrow">S&amp;P 500 · NASDAQ-100</p>
+      <h1>Find momentum <span class="grad">before it trends.</span></h1>
+      <p class="intro__sub">Filter by price, valuation, momentum and volume. Results are ranked by a composite score.</p>
+    </section>
 
-        <label class="filter">
-          <span class="label">Price min ($)</span>
-          <input type="number" id="price_min" value="5" min="0.5" step="0.5" />
-        </label>
-        <label class="filter">
-          <span class="label">Price max ($)</span>
-          <input type="number" id="price_max" value="100" min="0.5" step="0.5" />
-        </label>
-
-        <label class="filter">
-          <span class="label">P/E min</span>
-          <input type="number" id="pe_min" value="0" min="-100" step="0.5" />
-          <span class="hint">0 = exclude losers</span>
-        </label>
-        <label class="filter">
-          <span class="label">P/E max</span>
-          <input type="number" id="pe_max" value="20" min="0" step="0.5" />
-        </label>
-
-        <label class="filter">
-          <span class="label">Vol ratio &gt; <span id="vol-label-day">(today)</span></span>
-          <input type="number" id="vol_ratio_min" value="2" min="0.1" step="0.1" />
-          <span class="hint" id="vol-hint">today ÷ 20-day avg</span>
-        </label>
-
-        <label class="filter">
-          <span class="label">RSI min</span>
-          <input type="number" id="rsi_min" value="50" min="0" max="100" step="1" />
-        </label>
-        <label class="filter">
-          <span class="label">RSI max</span>
-          <input type="number" id="rsi_max" value="100" min="0" max="100" step="1" />
-        </label>
+    <!-- Filters -->
+    <section class="card filters" aria-labelledby="filters-title">
+      <div class="card__head">
+        <h2 id="filters-title">Filters</h2>
+        <div class="presets" role="group" aria-label="Filter presets">
+          <button class="chip is-active" data-preset="default" type="button">Default</button>
+          <button class="chip" data-preset="value" type="button">Value</button>
+          <button class="chip" data-preset="momentum" type="button">Momentum</button>
+          <button class="chip" data-preset="breakout" type="button">Volume breakout</button>
+        </div>
       </div>
+
+      <div class="filter-grid">
+        <div class="fgroup">
+          <span class="fgroup__label">Universe size</span>
+          <div class="field field--solo">
+            <input type="number" id="universe_size" value="500" min="50" max="600" step="50" inputmode="numeric" />
+            <span class="field__unit">stocks</span>
+          </div>
+          <span class="fgroup__hint">50 – 600 tickers</span>
+        </div>
+
+        <div class="fgroup">
+          <span class="fgroup__label">Price</span>
+          <div class="range">
+            <label class="field"><span class="field__unit field__unit--pre">$</span><input type="number" id="price_min" value="5" min="0.5" step="0.5" aria-label="Price min" /></label>
+            <span class="range__dash">–</span>
+            <label class="field"><span class="field__unit field__unit--pre">$</span><input type="number" id="price_max" value="100" min="0.5" step="0.5" aria-label="Price max" /></label>
+          </div>
+          <span class="fgroup__hint">Min – max share price</span>
+        </div>
+
+        <div class="fgroup">
+          <span class="fgroup__label">P/E ratio</span>
+          <div class="range">
+            <label class="field"><input type="number" id="pe_min" value="0" min="-100" step="0.5" aria-label="P/E min" /></label>
+            <span class="range__dash">–</span>
+            <label class="field"><input type="number" id="pe_max" value="20" min="0" step="0.5" aria-label="P/E max" /></label>
+          </div>
+          <span class="fgroup__hint">Min of 0 excludes unprofitable</span>
+        </div>
+
+        <div class="fgroup">
+          <span class="fgroup__label">RSI (14)</span>
+          <div class="range">
+            <label class="field"><input type="number" id="rsi_min" value="50" min="0" max="100" step="1" aria-label="RSI min" /></label>
+            <span class="range__dash">–</span>
+            <label class="field"><input type="number" id="rsi_max" value="100" min="0" max="100" step="1" aria-label="RSI max" /></label>
+          </div>
+          <span class="fgroup__hint">0 – 100 momentum oscillator</span>
+        </div>
+
+        <div class="fgroup">
+          <span class="fgroup__label">Volume ratio <span id="vol-label-day">(today)</span></span>
+          <div class="field field--solo">
+            <span class="field__unit field__unit--pre">&gt;</span>
+            <input type="number" id="vol_ratio_min" value="2" min="0.1" step="0.1" aria-label="Minimum volume ratio" />
+            <span class="field__unit">× avg</span>
+          </div>
+          <span class="fgroup__hint" id="vol-hint">today ÷ 20-day avg</span>
+        </div>
+      </div>
+
+      <p class="form-error" id="form-error" role="alert" hidden></p>
 
       <div class="actions">
-        <button id="run-btn" class="btn btn-primary">▶ Run Screen</button>
-        <label class="checkbox" title="Use yesterday's complete daily bar instead of today's partial bar. Recommended during US market hours (9:30 AM – 4 PM ET).">
-          <input type="checkbox" id="use_yesterday" />
-          <span>Use yesterday's bar <small style="color:#8b8770">(market hours)</small></span>
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" id="auto-refresh" />
-          <span>Auto-refresh every 5 min</span>
-        </label>
-        <button id="export-btn" class="btn btn-secondary" disabled>↓ Export CSV</button>
+        <div class="toggles">
+          <label class="switch" title="Use yesterday's complete daily bar instead of today's partial bar. Recommended during US market hours (9:30 AM – 4 PM ET).">
+            <input type="checkbox" id="use_yesterday" />
+            <span class="switch__track" aria-hidden="true"></span>
+            <span>Use yesterday's bar <small id="market-note"></small></span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="auto-refresh" />
+            <span class="switch__track" aria-hidden="true"></span>
+            <span>Auto-refresh every 5 min</span>
+          </label>
+        </div>
+        <div class="buttons">
+          <button id="export-btn" class="btn btn--ghost" type="button" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg>
+            Export CSV
+          </button>
+          <button id="run-btn" class="btn btn--primary" type="button">
+            <span class="btn__label">Run screen</span>
+            <kbd>↵</kbd>
+          </button>
+        </div>
       </div>
     </section>
 
-    <section class="stats" id="stats">
-      <div class="stat"><span class="stat-label">Universe</span><span class="stat-value" id="stat-universe">—</span></div>
-      <div class="stat"><span class="stat-label">With data</span><span class="stat-value" id="stat-with-data">—</span></div>
-      <div class="stat"><span class="stat-label">In price band</span><span class="stat-value" id="stat-band">—</span></div>
-      <div class="stat"><span class="stat-label">Passing all</span><span class="stat-value highlight" id="stat-passing">—</span></div>
-      <div class="stat"><span class="stat-label">Runtime</span><span class="stat-value" id="stat-runtime">—</span></div>
-      <div class="stat"><span class="stat-label">Last scan</span><span class="stat-value" id="stat-time">—</span></div>
+    <!-- Stats -->
+    <section class="stats" id="stats" aria-label="Scan summary">
+      <div class="stat"><span class="stat__label">Universe</span><span class="stat__value" id="stat-universe">—</span></div>
+      <div class="stat"><span class="stat__label">With data</span><span class="stat__value" id="stat-with-data">—</span></div>
+      <div class="stat"><span class="stat__label">In price band</span><span class="stat__value" id="stat-band">—</span></div>
+      <div class="stat stat--accent"><span class="stat__label">Passing all</span><span class="stat__value" id="stat-passing">—</span></div>
+      <div class="stat"><span class="stat__label">Runtime</span><span class="stat__value" id="stat-runtime">—</span></div>
+      <div class="stat"><span class="stat__label">Last scan</span><span class="stat__value" id="stat-time">—</span></div>
     </section>
 
-    <section class="results">
-      <div class="results-header">
-        <span class="results-title">RANKED RESULTS</span>
-        <span class="results-meta" id="results-meta"></span>
+    <!-- Results -->
+    <section class="card results" aria-labelledby="results-title">
+      <div class="card__head">
+        <h2 id="results-title">Ranked results</h2>
+        <span class="results__meta" id="results-meta"></span>
+      </div>
+      <div class="progress" id="progress" hidden>
+        <div class="progress__bar"></div>
+        <div class="progress__text"><span id="progress-text">Fetching prices and fundamentals…</span><span id="progress-timer" class="mono">0s</span></div>
       </div>
       <div class="table-wrap">
         <table id="results-table">
@@ -102,16 +158,22 @@
               <th data-sort="rank" class="sortable num">#</th>
               <th data-sort="ticker" class="sortable">Ticker</th>
               <th data-sort="price" class="sortable num">Price</th>
-              <th data-sort="change_pct" class="sortable num">Chg %</th>
+              <th data-sort="change_pct" class="sortable num">Chg</th>
               <th data-sort="pe_ratio" class="sortable num">P/E</th>
               <th data-sort="volume_ratio" class="sortable num">Vol×</th>
-              <th data-sort="rsi" class="sortable num">RSI</th>
-              <th data-sort="score" class="sortable num">Score</th>
-              <th class="num">30d</th>
+              <th data-sort="rsi" class="sortable">RSI</th>
+              <th data-sort="score" class="sortable">Score</th>
+              <th class="num">30-day</th>
             </tr>
           </thead>
           <tbody id="results-tbody">
-            <tr class="empty"><td colspan="9">Press <strong>Run Screen</strong> to begin.</td></tr>
+            <tr class="empty"><td colspan="9">
+              <div class="empty__inner">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16l5-5 3.5 3.5L20 7"/></svg>
+                <strong>No scan yet</strong>
+                <span>Set your filters and press <b>Run screen</b>.</span>
+              </div>
+            </td></tr>
           </tbody>
         </table>
       </div>
@@ -119,17 +181,11 @@
 
     <footer class="footer">
       <span>Data: Yahoo Finance · Universe: S&amp;P 500 + NASDAQ-100</span>
-      <span class="disclaimer">Not financial advice. For research/educational use only.</span>
+      <span>Not financial advice. For research and educational use only.</span>
     </footer>
   </main>
 
-  <div id="overlay" class="overlay hidden">
-    <div class="overlay-card">
-      <div class="overlay-spinner"></div>
-      <div class="overlay-text" id="overlay-text">Scanning…</div>
-      <div class="overlay-sub" id="overlay-sub">This may take a few minutes</div>
-    </div>
-  </div>
+  <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
 
   <script src="/static/app.js"></script>
 </body>
