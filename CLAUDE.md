@@ -49,10 +49,10 @@ stock_screener/
 ├── indicators.py          # RSI (Wilder) + volume ratio
 ├── universe.py            # Russell 3000 fetcher with fallback
 ├── templates/
-│   └── index.html         # Jinja2 template (Finviz-inspired)
+│   └── index.html         # Jinja2 template (Apple-inspired UI)
 └── static/
-    ├── styles.css         # Finviz-inspired styling
-    └── app.js             # client-side fetch + render + auto-refresh
+    ├── styles.css         # Apple-inspired styling, dark/light via prefers-color-scheme
+    └── app.js             # fetch + render, presets, validation, saved filters, auto-refresh
 ```
 
 ## Routes
